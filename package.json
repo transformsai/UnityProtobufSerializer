@@ -1,11 +1,11 @@
 {
   "name": "ai.transforms.unity-protobuf-serializer",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "displayName": "UnityProtobufSerializer",
   "description": "Allows unity to use vanilla protobuf as Serialized Fields",
   "unity": "2020.3",
   "unityRelease": "15f2",
-  "documentationUrl": "https://github.com/transitional-forms-inc/UnityProtobufSerializer",
+  "documentationUrl": "https://github.com/transformsai/UnityProtobufSerializer",
   "dependencies": {},
   "keywords": [
     "grpc-web",
