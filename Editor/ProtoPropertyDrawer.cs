@@ -1,49 +1,71 @@
 using System;
+using System.Collections.Generic;
+using TransformsAI.Unity.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
 
-[CustomPropertyDrawer(typeof(Proto<>))]
-public class ProtoPropertyDrawer : PropertyDrawer
+namespace TransformsAI.Unity.Protobuf.Editor
 {
-    private float _objectHeight = EditorUtils.SingleLineHeight;
-
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    [CustomPropertyDrawer(typeof(Proto<>))]
+    public class ProtoPropertyDrawer : PropertyDrawer
     {
-        var ctx = ProtoDrawerContext.FromCache(property);
-        var getter = ReflectionUtils.MakeGetter(property);
-        var target = property.serializedObject.targetObject;
-        var proto = (IProto)getter(target);
-        var value = proto.Value;
-        Event e = Event.current;
+        private float _objectHeight = EditorUtils.SingleLineHeight;
 
-        if (e.type == EventType.ContextClick && position.Contains(e.mousePosition))
+        static ProtoPropertyDrawer()
         {
-            GenericMenu context = new GenericMenu();
-            context.AddItem(new GUIContent("Use Binary Serialization"), proto.UseBinaryEncoding, () =>
+            EditorApplication.contextualPropertyMenu += OnContextualPropertyMenu;
+        }
+
+        private static readonly HashSet<SerializedProperty> Props = new HashSet<SerializedProperty>();
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            var ctx = ProtoDrawerContext.FromCache(property);
+            var proto = (IProto)property.ReflectedValue();
+            var value = proto.Value;
+            EditorGUI.BeginChangeCheck();
+
+            var nameContent = new GUIContent(ObjectNames.NicifyVariableName(property.name));
+            Props.Add(property);
+            var propContent = EditorGUI.BeginProperty(position, nameContent, property);
+
+            _objectHeight = ProtoDraw.DrawProto(position, value, propContent, ctx, true);
+
+            EditorGUI.EndProperty();
+            Props.Remove(property);
+
+            if (EditorGUI.EndChangeCheck())
             {
-                proto.UseBinaryEncoding = !proto.UseBinaryEncoding;
                 property.serializedObject.ApplyModifiedProperties();
-                EditorUtility.SetDirty(target);
+                property.serializedObject.Update();
+                EditorUtility.SetDirty(property.serializedObject.targetObject);
+            }
 
-            });
-            context.ShowAsContext();
         }
 
-        EditorGUI.BeginChangeCheck();
-
-        _objectHeight = ProtoDraw.DrawProto(position, value, ObjectNames.NicifyVariableName(property.name), ctx, true);
-
-        if (EditorGUI.EndChangeCheck())
+        static void OnContextualPropertyMenu(GenericMenu menu, SerializedProperty serializedProperty)
         {
-            property.serializedObject.ApplyModifiedProperties();            
-            property.serializedObject.Update();
-            property.FindPropertyRelative("protoHash").longValue = value.GetHashCode();
-            EditorUtility.SetDirty(target);
+            if (!Props.Contains(serializedProperty)) return;
+
+            var relativeProp = serializedProperty.FindPropertyRelative(nameof(IProto.EncodingFormat));
+            var fmt = (ProtoFormat)relativeProp.intValue;
+
+            foreach (ProtoFormat value in Enum.GetValues(typeof(ProtoFormat)))
+                menu.AddItem(new GUIContent("Encoding/" + value), fmt == value, Func, value);
+
+            void Func(object newFmt)
+            {
+                var format = (ProtoFormat)newFmt;
+                relativeProp.intValue = (int)format;
+                var serializedObject = serializedProperty.serializedObject;
+                serializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(serializedObject.targetObject);
+            }
         }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => _objectHeight;
+
+        public override bool CanCacheInspectorGUI(SerializedProperty property) => true;
+
     }
-
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => _objectHeight;
-
-    public override bool CanCacheInspectorGUI(SerializedProperty property) => true;
-
 }
