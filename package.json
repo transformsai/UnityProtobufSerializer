@@ -1,6 +1,6 @@
 {
   "name": "ai.transforms.unity-protobuf-serializer",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "displayName": "UnityProtobufSerializer",
   "description": "Allows unity to use vanilla protobuf as Serialized Fields",
   "unity": "2020.3",
