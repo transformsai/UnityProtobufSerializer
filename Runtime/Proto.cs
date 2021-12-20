@@ -14,7 +14,9 @@ namespace TransformsAI.Unity.Protobuf
         
         [Tooltip("Using text encoding allows for readable diffs in source control, but introduces a dependency on proto file variable names.")]
         public ProtoFormat EncodingFormat;
-        [SerializeField, FormerlySerializedAs("binaryValue")] private string BinaryValue;
+
+        [SerializeField, Obsolete] private byte[] binaryValue;
+        [SerializeField] private string BinaryValue;
         [SerializeField, FormerlySerializedAs("textValue")] private string TextValue;
         public T Value { get; set; }
 
@@ -28,6 +30,11 @@ namespace TransformsAI.Unity.Protobuf
 
         public void OnBeforeSerialize()
         {
+            if (binaryValue != null && binaryValue.Length > 0)
+            {
+                BinaryValue = Convert.ToBase64String(binaryValue);
+                binaryValue = null;
+            }
             switch (EncodingFormat)
             {
                 case ProtoFormat.BinaryWithFallback:
@@ -50,6 +57,11 @@ namespace TransformsAI.Unity.Protobuf
 
         public void OnAfterDeserialize()
         {
+            if (binaryValue != null && binaryValue.Length > 0)
+            {
+                BinaryValue = Convert.ToBase64String(binaryValue);
+                binaryValue = null;
+            }
             // If we only have one type of data, use that to update the value
             if (string.IsNullOrEmpty(TextValue) && !string.IsNullOrEmpty(BinaryValue))
             {
