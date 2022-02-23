@@ -17,7 +17,7 @@ namespace TransformsAI.Unity.Protobuf.Editor
     internal class LinkXmlInstallerEditor : IUnityLinkerProcessor
     {
         int IOrderedCallback.callbackOrder => 0;
-        string IUnityLinkerProcessor.GenerateAdditionalLinkXmlFile(BuildReport report, UnityLinkerBuildPipelineData data)
+        public string GenerateAdditionalLinkXmlFile(BuildReport report, UnityLinkerBuildPipelineData data)
         {
             // Uses Static reference on the script to get link.xml
             var obj = ScriptableObject.CreateInstance<LinkXmlInstaller>();
@@ -27,7 +27,7 @@ namespace TransformsAI.Unity.Protobuf.Editor
             // So resolve it to an absolute path:
             return Path.GetFullPath(assetPath);
         }
-        void IUnityLinkerProcessor.OnBeforeRun(BuildReport report, UnityLinkerBuildPipelineData data) { }
-        void IUnityLinkerProcessor.OnAfterRun(BuildReport report, UnityLinkerBuildPipelineData data) { }
+        public void OnBeforeRun(BuildReport report, UnityLinkerBuildPipelineData data) { }
+        public void OnAfterRun(BuildReport report, UnityLinkerBuildPipelineData data) { }
     }
 }
