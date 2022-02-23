@@ -16,7 +16,9 @@ namespace TransformsAI.Unity.Protobuf
         public ProtoFormat EncodingFormat;
 
         [SerializeField, Obsolete] private byte[] binaryValue;
+        
         [SerializeField] private string BinaryValue;
+        [SerializeField] private int LastHash;
         [SerializeField, FormerlySerializedAs("textValue")] private string TextValue;
         public T Value { get; set; }
 
@@ -30,11 +32,20 @@ namespace TransformsAI.Unity.Protobuf
 
         public void OnBeforeSerialize()
         {
+            // We know the hashcode of IMessage<T> is semantically valid
+            // because IMessage<T> implements IEquatable<T>.
+            var hash = Value?.GetHashCode();
+            if(hash == LastHash) return;
+            LastHash = hash ?? 0;
+
+            // legacy
             if (binaryValue != null && binaryValue.Length > 0)
             {
                 BinaryValue = Convert.ToBase64String(binaryValue);
                 binaryValue = null;
             }
+
+
             switch (EncodingFormat)
             {
                 case ProtoFormat.BinaryWithFallback:
@@ -57,6 +68,7 @@ namespace TransformsAI.Unity.Protobuf
 
         public void OnAfterDeserialize()
         {
+            // legacy
             if (binaryValue != null && binaryValue.Length > 0)
             {
                 BinaryValue = Convert.ToBase64String(binaryValue);
