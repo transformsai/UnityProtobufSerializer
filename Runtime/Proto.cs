@@ -18,7 +18,7 @@ namespace TransformsAI.Unity.Protobuf
         [SerializeField, Obsolete] private byte[] binaryValue;
         
         [SerializeField] private string BinaryValue;
-        [SerializeField] private int LastHash;
+        private int LastHash;
         [SerializeField, FormerlySerializedAs("textValue")] private string TextValue;
         public T Value { get; set; }
 
@@ -78,16 +78,13 @@ namespace TransformsAI.Unity.Protobuf
             if (string.IsNullOrEmpty(TextValue) && !string.IsNullOrEmpty(BinaryValue))
             {
                 Value = Parser.ParseFrom(Convert.FromBase64String(BinaryValue));
-                return;
             }
-            if (string.IsNullOrEmpty(BinaryValue) && !string.IsNullOrEmpty(TextValue))
+            else if (string.IsNullOrEmpty(BinaryValue) && !string.IsNullOrEmpty(TextValue))
             {
                 Value = JsonParser.Default.Parse<T>(TextValue);
-                return;
+                
             }
-
-            
-            switch (EncodingFormat)
+            else switch (EncodingFormat)
             {
                 case ProtoFormat.TextWithFallback:
                 case ProtoFormat.Text:
@@ -118,6 +115,8 @@ namespace TransformsAI.Unity.Protobuf
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
+            LastHash = Value.GetHashCode();
         }
 
         IMessage IProto.Value => Value;
