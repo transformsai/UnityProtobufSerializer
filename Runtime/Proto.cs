@@ -18,7 +18,7 @@ namespace TransformsAI.Unity.Protobuf
         [SerializeField, Obsolete] private byte[] binaryValue;
         
         [SerializeField] private string BinaryValue;
-        private int LastHash;
+        private int _lastHash;
         [SerializeField, FormerlySerializedAs("textValue")] private string TextValue;
         public T Value { get; set; }
 
@@ -35,15 +35,17 @@ namespace TransformsAI.Unity.Protobuf
             // We know the hashcode of IMessage<T> is semantically valid
             // because IMessage<T> implements IEquatable<T>.
             var hash = Value?.GetHashCode();
-            if(hash == LastHash) return;
-            LastHash = hash ?? 0;
+            if(hash == _lastHash) return;
+            _lastHash = hash ?? 0;
 
+#pragma warning disable CS0612
             // legacy
             if (binaryValue != null && binaryValue.Length > 0)
             {
                 BinaryValue = Convert.ToBase64String(binaryValue);
                 binaryValue = null;
             }
+#pragma warning restore CS0612
 
 
             switch (EncodingFormat)
@@ -68,12 +70,14 @@ namespace TransformsAI.Unity.Protobuf
 
         public void OnAfterDeserialize()
         {
+#pragma warning disable CS0612
             // legacy
             if (binaryValue != null && binaryValue.Length > 0)
             {
                 BinaryValue = Convert.ToBase64String(binaryValue);
                 binaryValue = null;
             }
+#pragma warning restore CS0612
             // If we only have one type of data, use that to update the value
             if (string.IsNullOrEmpty(TextValue) && !string.IsNullOrEmpty(BinaryValue))
             {
@@ -116,7 +120,7 @@ namespace TransformsAI.Unity.Protobuf
                     throw new ArgumentOutOfRangeException();
             }
 
-            LastHash = Value.GetHashCode();
+            _lastHash = Value.GetHashCode();
         }
 
         IMessage IProto.Value => Value;
@@ -125,7 +129,10 @@ namespace TransformsAI.Unity.Protobuf
             get => EncodingFormat;
             set => EncodingFormat = value;
         }
+        public static implicit operator T(Proto<T> proto) => proto.Value;
+        public static implicit operator Proto<T>(T proto) => new Proto<T>(proto);
     }
+
 
     public interface IProto
     {
